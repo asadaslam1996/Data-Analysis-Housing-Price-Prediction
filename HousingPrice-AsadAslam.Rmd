@@ -1,0 +1,492 @@
+---
+title: "Housing Price"
+author: "Asad Aslam - University of Catania"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+# **Housing Data set**
+
+```{r}
+housing_data = read.csv(file='Housing.csv')
+```
+
+**Problem Statement**
+
+Consider a real estate company data set containing the prices of properties. Essentially, I wants to identify the following things:
+
+1.  In my opinion, the price increased when the area of house increase.
+
+2.  Other variables affecting the prices of house? eg. bedrooms, bathrooms, etc.
+
+3.  To create a linear model that quantitatively relates house prices with variables.
+
+**Libraries**
+
+```{r}
+library(ggplot2)
+library(ggcorrplot)
+library(corrplot)
+library(pacman)
+pacman::p_load(pacman, dplyr, ggplot2, rio, gridExtra, scales, ggcorrplot, caret)
+```
+
+## [**Feature Analysis**]{.underline}
+
+```{r}
+dim(housing_data)
+```
+
+The housing data set contains 545 rows and 13 columns. Further details are mentioned below:
+
+**Column Names**
+
+```{r}
+colnames(housing_data)
+```
+
+**Column Details**
+
+1.  Price = The price of house in Indian Rupees.
+
+2.  Area = The total number of area covered by house in square feet.
+
+3.  Bedrooms = The total number of bedrooms in a house.
+
+4.  Bathrooms = The total number of bathrooms in a house.
+
+5.  Furnishing Status = It contains the status \| "1" : Furnished House, "0": Unfurnished House, "0.5": Semi-Furnished House
+
+6.  Stories = The total number of stories in a house.
+
+7.  Main Road = Has main road facing or not \| Has: 1, Not: 0
+
+8.  Guestroom = Has guestroom or not \| Has: 1, Not: 0
+
+9.  Basement = Has basement or not \| Has: 1, Not: 0
+
+10. Hot water heating = Has Hot water heating or not \| Has: 1, Not: 0
+
+11. Air conditioning = Has Air conditioning or not \| Has: 1, Not: 0
+
+12. Parking = The total number of car parking available in a house.
+
+13. Prefarea = Has Prefarea or not \| Has: 1, Not: 0
+
+**Structure** This helps in understanding the structure of the data set, data type of each attribute. In this data there are some continuous variable and some categorical variables.
+
+```{r}
+str(housing_data)
+```
+
+**Data Head**
+
+```{r}
+head(housing_data)
+```
+
+**Summary**
+
+```{r}
+summary(housing_data)
+```
+
+```{r}
+orig_data = housing_data
+housing_data$furnishingstatus <- factor(housing_data$furnishingstatus, levels = c(0,0.5,1),labels = c("unfurnished", "semi-furnished", "furnished"))
+housing_data$bedrooms<-as.factor(housing_data$bedrooms)
+housing_data$bathrooms<-as.factor(housing_data$bathrooms)
+housing_data$guestroom<-as.factor(housing_data$guestroom)
+housing_data$stories<-as.factor(housing_data$stories)
+housing_data$basement<-as.factor(housing_data$basement)
+housing_data$airconditioning<-as.factor(housing_data$airconditioning)
+housing_data$parking<-as.factor(housing_data$parking)
+housing_data$hotwaterheating<-as.factor(housing_data$hotwaterheating)
+housing_data$mainroad<-as.factor(housing_data$mainroad)
+
+
+```
+
+```{r}
+summary(housing_data$furnishingstatus)
+```
+
+```{r}
+summary(housing_data$bedrooms)
+
+```
+
+```{r}
+summary(housing_data$bathrooms)
+
+```
+
+```{r}
+summary(housing_data$guestroom)
+
+```
+
+```{r}
+summary(housing_data$stories)
+
+```
+
+```{r}
+summary(housing_data$basement)
+
+```
+
+```{r}
+summary(housing_data$airconditioning)
+
+```
+
+```{r}
+summary(housing_data$parking)
+
+```
+
+```{r}
+summary(housing_data$hotwaterheating)
+```
+
+```{r}
+summary(housing_data$mainroad)
+```
+
+```{r}
+summary(housing_data$price)
+```
+
+```{r}
+summary(housing_data$area)
+```
+
+**Data Analysis through pie charts**
+
+Lets visualize the data of different variables with respect to the percentage in pie charts
+
+```{r}
+
+pie_data = housing_data
+par(mfrow=c(1,2))
+
+#Price
+pie(table(pie_data$furnishingstatus), labels =paste0( round((table(pie_data$furnishingstatus)/length(pie_data$furnishingstatus))*100,2) , "%") ,main = "House Furnishing Status",col = rainbow(length(table(pie_data$furnishingstatus))))
+legend("topleft", names(table(pie_data$furnishingstatus)), cex = 0.8,
+   fill = rainbow(length(table(pie_data$furnishingstatus))))
+
+#Bedrooms
+pie(table(pie_data$bedrooms), labels =paste0( round((table(pie_data$bedrooms)/length(pie_data$bedrooms))*100,2) , "%") ,main = "House bedrooms",col = rainbow(length(table(pie_data$bedrooms))))
+legend("topleft", names(table(pie_data$bedrooms)), cex = 0.8,
+   fill = rainbow(length(table(pie_data$bedrooms))))
+
+#Bathrooms
+pie(table(pie_data$bathrooms), labels =paste0( round((table(pie_data$bathrooms)/length(pie_data$bathrooms))*100,2) , "%") ,main = "House bathrooms",col = rainbow(length(table(pie_data$bathrooms))))
+legend("topleft", names(table(pie_data$bathrooms)), cex = 0.8,
+fill = rainbow(length(table(pie_data$bathrooms))))
+
+#Guestrooms
+pie(table(pie_data$guestroom), labels =paste0( round((table(pie_data$guestroom)/length(pie_data$guestroom))*100,2) , "%") ,main = "House guestroom",col = rainbow(length(table(pie_data$guestroom))))
+legend("topleft", names(table(pie_data$guestroom)), cex = 0.8,
+   fill = rainbow(length(table(pie_data$guestroom))))
+
+#Airconditioning
+pie(table(pie_data$airconditioning), labels =paste0( round((table(pie_data$airconditioning)/length(pie_data$airconditioning))*100,2) , "%") ,main = "House air conditioning",col = rainbow(length(table(pie_data$airconditioning))))
+legend("topleft", names(table(pie_data$airconditioning)), cex = 0.8,
+fill = rainbow(length(table(pie_data$airconditioning))))
+
+#Hotwaterheating
+pie(table(pie_data$hotwaterheating), labels =paste0( round((table(pie_data$hotwaterheating)/length(pie_data$hotwaterheating))*100,2) , "%") ,main = "House hotwaterheating",col = rainbow(length(table(pie_data$hotwaterheating))))
+legend("topleft", names(table(pie_data$hotwaterheating)), cex = 0.8,
+fill = rainbow(length(table(pie_data$hotwaterheating))))
+
+#stories
+pie(table(pie_data$stories), labels =paste0( round((table(pie_data$stories)/length(pie_data$stories))*100,2) , "%") ,main = "House stories",col = rainbow(length(table(pie_data$stories))))
+legend("topleft", names(table(pie_data$stories)), cex = 0.8,
+fill = rainbow(length(table(pie_data$stories))))
+
+#parking
+pie(table(pie_data$parking), labels =paste0( round((table(pie_data$parking)/length(pie_data$parking))*100,2) , "%") ,main = "House parking",col = rainbow(length(table(pie_data$parking))))
+legend("topleft", names(table(pie_data$parking)), cex = 0.8,
+fill = rainbow(length(table(pie_data$parking))))
+
+#mainroad
+pie(table(pie_data$mainroad), labels =paste0( round((table(pie_data$mainroad)/length(pie_data$mainroad))*100,2) , "%") ,main = "House mainroad",col = rainbow(length(table(pie_data$mainroad))))
+legend("topleft", names(table(pie_data$mainroad)), cex = 0.8,
+fill = rainbow(length(table(pie_data$mainroad))))
+
+#basement
+pie(table(pie_data$basement), labels =paste0( round((table(pie_data$basement)/length(pie_data$basement))*100,2) , "%") ,main = "House basement",col = rainbow(length(table(pie_data$basement))))
+legend("topleft", names(table(pie_data$basement)), cex = 0.8,
+fill = rainbow(length(table(pie_data$basement))))
+
+```
+
+**Data Analysis through bar graph**
+
+Lets visualize the data of variables with respect to the count in bar graph
+
+```{r}
+
+p1 <-  ggplot(housing_data, aes(x=furnishingstatus, fill=furnishingstatus)) +
+  theme_bw() +
+  geom_bar() +
+  ylim(0, 300) +
+  labs(title = "Furnishing Status") +
+  scale_x_discrete()
+p1
+
+p2 <-  ggplot(housing_data, aes(x=bedrooms, fill=bedrooms)) +
+  theme_bw() +
+  geom_bar() +
+  ylim(0, 300) +
+  labs(title = "Bedrooms") +
+  scale_x_discrete()
+p2
+
+p3 <-  ggplot(housing_data, aes(x=bathrooms, fill=bathrooms)) +
+  theme_bw() +
+  geom_bar() +
+  ylim(0, 600) +
+  labs(title = "Bathrooms") +
+  scale_x_discrete()
+p3
+
+p4 <-  ggplot(housing_data, aes(x=stories, fill=stories)) +
+  theme_bw() +
+  geom_bar() +
+  ylim(0, 300) +
+  labs(title = "Stories") +
+  scale_x_discrete()
+p4
+
+p5 <-  ggplot(housing_data, aes(x=basement, fill=basement)) +
+  theme_bw() +
+  geom_bar() +
+  ylim(0, 500) +
+  labs(title = "Basement") +
+  scale_x_discrete()
+p5
+
+p6 <-  ggplot(housing_data, aes(x=airconditioning, fill=airconditioning)) +
+  theme_bw() +
+  geom_bar() +
+  ylim(0, 500) +
+  labs(title = "airconditioning") +
+  scale_x_discrete()
+p6
+
+p7 <-  ggplot(housing_data, aes(x=parking, fill=parking)) +
+  theme_bw() +
+  geom_bar() +
+  ylim(0, 300) +
+  labs(title = "parking") +
+  scale_x_discrete()
+p7
+
+p8 <-  ggplot(housing_data, aes(x=hotwaterheating, fill=hotwaterheating)) +
+  theme_bw() +
+  geom_bar() +
+  ylim(0, 600) +
+  labs(title = "hotwaterheating") +
+  scale_x_discrete()
+p8
+
+p9 <-  ggplot(housing_data, aes(x=guestroom, fill=guestroom)) +
+  theme_bw() +
+  geom_bar() +
+  ylim(0, 500) +
+  labs(title = "Guestroom") +
+  scale_x_discrete()
+p9
+
+
+hist(housing_data$price, freq=FALSE,col = "red")
+hist(housing_data$area,freq=FALSE, col = "blue")
+
+```
+
+```{r}
+
+```
+
+**Correlation**
+
+```{r}
+cov_matrix<-cov(orig_data)
+cov_matrix
+```
+
+```{r}
+cor_matrix<-cor(orig_data)
+
+corrplot(cor_matrix, type = "upper", order = "hclust", 
+         tl.col = "black", tl.srt = 45)
+```
+
+As we can see that in above cor_matrix that the price has a correlation with all the other variables.
+
+```{r}
+cor_matrix[,'price']
+```
+
+## [**Regression Analysis (Price)**]{.underline}
+
+we will perform regression analysis on variable area to solve our first problem statement.
+
+1.  In my opinion, the price increased when the area of house increase.
+
+2.  Other variables affecting the prices of house? eg. bedrooms, bathrooms, etc.
+
+**Price \~ Area**
+
+```{r}
+price_Area = lm(housing_data$price~housing_data$area)
+summary(price_Area)
+```
+
+```{r}
+coef(price_Area)
+```
+
+```{r}
+confint(price_Area)
+```
+
+```{r}
+price_Area$coefficients
+```
+
+{Price} = a + {Area} \* b
+
+You can see the values of the intercept "a" and the slope "b" for the area. These "a" and "b" values plot a line between all the points of the data. So in this case, if there is a house with 7777 area, a is 2387308.4824 and b is 461.9749, the model predicts (on average) that its price is around 2387308.4824+ (461.9749\* 7777) = 5,980,087.2797.
+
+```{r}
+plot(housing_data$area,housing_data$price)
+abline(price_Area,col="red",lwd=3)
+```
+
+```{r}
+all_variable = lm(orig_data$price~.,data=orig_data)
+summary(all_variable)
+```
+
+Lets check the impact of variables other than price.
+
+Replacing values of column **furnishingstatus**:
+
+1 -\> Furnished
+
+0.5 -\> Semi-Furnished
+
+0 -\> Unfurnished
+
+```{r}
+plot_data <- orig_data
+```
+
+Lets see some visual representation of other variable with respect to boxplot and see are they affecting the price?
+
+**Single variable box plot with price.**
+
+```{r}
+
+#furnishingstatus
+ggplot(housing_data, aes(x=furnishingstatus, y=price,color=furnishingstatus)) + 
+  geom_boxplot()
+
+#bedrooms
+ggplot(housing_data, aes(x=bedrooms, y=price,color=bedrooms)) + 
+  geom_boxplot()
+
+#bathrooms
+ggplot(housing_data, aes(x=bathrooms, y=price,color=bathrooms)) + 
+  geom_boxplot()
+
+
+#bathrooms
+ggplot(housing_data, aes(x=guestroom, y=price,color=guestroom)) + 
+  geom_boxplot()
+
+#parking
+ggplot(housing_data, aes(x=parking, y=price,color=parking)) + 
+  geom_boxplot()
+
+
+#mainroad
+ggplot(housing_data, aes(x=mainroad, y=price,color=mainroad)) + 
+  geom_boxplot()
+  
+
+#airconditioning
+ggplot(housing_data, aes(x=airconditioning, y=price,color=airconditioning)) + 
+  geom_boxplot()
+
+#basement
+ggplot(housing_data, aes(x=basement, y=price,color=basement)) + 
+  geom_boxplot()
+
+```
+
+**Grouped box plotting**
+
+**Price vs [Furnishing status , Airconditioning]**
+
+```{r}
+ggplot(housing_data, aes(x=furnishingstatus, y=price , color = airconditioning)) + 
+  geom_boxplot() + facet_wrap(~airconditioning)
+```
+
+**Price vs [Furnishing status , guestroom]**
+
+```{r}
+ggplot(housing_data, aes(x=furnishingstatus, y=price , color = guestroom)) + 
+  geom_boxplot() + facet_wrap(~guestroom)
+```
+
+**Price vs [Area , Mainroad]**
+
+```{r}
+ggplot(housing_data, aes(x=area, y=price , color = mainroad)) + 
+  geom_boxplot() + facet_wrap(~mainroad)
+```
+
+**Price vs [Area, Basement]**
+
+```{r}
+ggplot(housing_data, aes(x=area, y=price , color = basement)) + 
+  geom_boxplot() + facet_wrap(~basement)
+```
+
+**Price vs [Furnishing Status, Hot Water Heating]**
+
+```{r}
+ggplot(housing_data, aes(x=furnishingstatus, y=price , color = hotwaterheating)) + 
+  geom_boxplot() + facet_wrap(~hotwaterheating)
+```
+
+```{r}
+all_impact_variable = lm(orig_data$price~orig_data$area+orig_data$bathrooms+orig_data$stories+orig_data$hotwaterheating+orig_data$airconditioning+orig_data$parking+orig_data$prefarea+orig_data$furnishingstatus)
+summary(all_impact_variable)
+```
+
+**Price = *a + {area}b1 + {bathrooms}b2 + {stories}b3 + {hotwaterheating}\*b4 + {airconditioning}\*b5 + {parking}\*b6 + {prefarea}\*b7 + {furnishingstatud}\*b8***
+
+```{r}
+Factor_variable = lm(housing_data$price~.,data=housing_data)
+summary(Factor_variable)
+```
+
+**Scattered Plot**
+
+```{r}
+my_cols <- c("#00AFBB", "#E7B800", "#FC4E07") 
+pairs(housing_data[,1:5], pch = 19,cex = 0.5,
+      col = my_cols,lower.panel = NULL)
+```
+
+## [**Conclusion**]{.underline}
+
+**According to my analysis, the area has a high correlation with the price. However, there are some variables, which are playing an important part in affecting the price in many cases. for instance: furnishing status, bathrooms, air conditioning, etc. As you can see from the ab-line graph above, the price is increasing when the area is increased. We are also able to visualize that in some cases the area of houses are the same but there is a difference in price and wise verse. So it means, the area is not the only variable that impacts the price of a house.**
